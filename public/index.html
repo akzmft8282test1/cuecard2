@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>큐카드 암기 연습기</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* 3D Flip Card Effect */
+    .perspective { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
+  <!-- 네비게이션 바 -->
+  <nav class="bg-indigo-600 text-white shadow-md mb-8">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold flex items-center gap-2">
+        <span>🎤</span> 영문 발표 큐카드 암기 연습기
+      </h1>
+      <div class="flex gap-3">
+        <a href="/" class="bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded-lg text-sm font-medium transition">연습하기</a>
+        <a href="/add" class="bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 rounded-lg text-sm font-medium transition">+ 카드 추가</a>
+        <a href="/del" class="bg-rose-500 hover:bg-rose-600 px-3 py-1.5 rounded-lg text-sm font-medium transition">- 카드 삭제</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto px-4 space-y-6">
+    <!-- 설정 및 대입 정보 입력 영역 -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">1. 큐카드 선택</label>
+        <select id="cardSelect" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+          <option value="">데이터를 불러오는 중...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">2. 발표자 이름 입력 ([이름])</label>
+        <input type="text" id="speakerName" value="Minsoo" placeholder="이름을 입력하세요" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+      </div>
+    </div>
+
+    <!-- 모드 선택 탭 -->
+    <div class="flex bg-slate-200 p-1.5 rounded-xl text-sm font-semibold">
+      <button onclick="switchMode('list')" id="tab-list" class="flex-1 py-2.5 rounded-lg transition text-slate-600"> 전체 리스트 모드</button>
+      <button onclick="switchMode('flash')" id="tab-flash" class="flex-1 py-2.5 rounded-lg transition text-slate-600"> 플래시카드 (3D Flip)</button>
+      <button onclick="switchMode('blank')" id="tab-blank" class="flex-1 py-2.5 rounded-lg transition text-slate-600"> 빈칸 암기 모드</button>
+    </div>
+
+    <!-- [뷰 1] 전체 리스트 모드 -->
+    <div id="view-list" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+      <div class="flex justify-between items-center mb-4 border-b pb-3">
+        <h2 class="text-lg font-bold text-slate-700">전체 대본 (13개 문장)</h2>
+        <button onclick="speakAll()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition">
+          <span>🔊</span> 전체 읽기
+        </button>
+      </div>
+      <div id="sentenceList" class="space-y-2"></div>
+    </div>
+
+    <!-- [뷰 2] 플래시카드 모드 -->
+    <div id="view-flash" class="hidden space-y-4">
+      <div class="perspective w-full h-64 cursor-pointer" onclick="flipCard()">
+        <div id="flashCard" class="transform-style-3d relative w-full h-full duration-500 rounded-2xl shadow-md border border-slate-200 bg-white">
+          <!-- 앞면 -->
+          <div class="backface-hidden absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+            <span id="flashNum" class="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full mb-3">문장 1/13</span>
+            <p id="flashFront" class="text-2xl font-bold text-slate-800">문장을 클릭하면 뒷면이 보입니다.</p>
+            <span class="text-xs text-slate-400 mt-4">클릭하여 뒤집기 🔄</span>
+          </div>
+          <!-- 뒷면 -->
+          <div class="backface-hidden rotate-y-180 absolute inset-0 bg-indigo-50 rounded-2xl flex flex-col items-center justify-center p-6 text-center">
+            <p id="flashBack" class="text-xl font-medium text-indigo-950">영어 대본 문장</p>
+            <button onclick="event.stopPropagation(); speakCurrentFlash();" class="mt-4 bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1 hover:bg-indigo-700">
+              🔊 발음 듣기
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- 카드 컨트롤 버튼 -->
+      <div class="flex justify-between items-center">
+        <button onclick="prevCard()" class="bg-white border border-slate-300 px-5 py-2.5 rounded-xl font-semibold hover:bg-slate-50 transition">← 이전 문장</button>
+        <button onclick="speakCurrentFlash()" class="bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-emerald-600 transition">🔊 발음 듣기</button>
+        <button onclick="nextCard()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition">다음 문장 →</button>
+      </div>
+    </div>
+
+    <!-- [뷰 3] 빈칸 암기 테스트 모드 -->
+    <div id="view-blank" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h2 class="text-lg font-bold text-slate-700">핵심 변수 빈칸 뚫기 테스트</h2>
+        <button onclick="renderBlankList()" class="text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium">다시 설정</button>
+      </div>
+      <div id="blankList" class="space-y-3 leading-relaxed"></div>
+    </div>
+  </main>
+
+  <script>
+    let cuecards = [];
+    let currentCard = null;
+    let currentSentences = [];
+    let currentFlashIndex = 0;
+    let isFlipped = false;
+
+    // --- 연도 영어 발음 읽기 변환 로직 (예: 2007 -> two thousand and seven) ---
+    function convertYearToWords(yearStr) {
+      const num = parseInt(yearStr, 10);
+      if (isNaN(num)) return yearStr;
+
+      const ones = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+      const teens = ["ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+      const tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+      if (num >= 2000 && num <= 2009) {
+        return num === 2000 ? "two thousand" : `two thousand and ${ones[num % 10]}`;
+      } else if (num >= 1000 && num <= 9999) {
+        const firstTwo = Math.floor(num / 100);
+        const lastTwo = num % 100;
+
+        let firstPart = firstTwo < 20 ? teens[firstTwo - 10] || ones[firstTwo] : `${tens[Math.floor(firstTwo / 10)]} ${ones[firstTwo % 10]}`;
+        let lastPart = "";
+
+        if (lastTwo < 10) {
+          lastPart = lastTwo === 0 ? "" : `oh ${ones[lastTwo]}`;
+        } else if (lastTwo < 20) {
+          lastPart = teens[lastTwo - 10];
+        } else {
+          lastPart = `${tens[Math.floor(lastTwo / 10)]} ${ones[lastTwo % 10]}`;
+        }
+        return `${firstPart} ${lastPart}`.trim();
+      }
+      return yearStr;
+    }
+
+    // --- 13개 문장 생성 로직 ---
+    function generateSentences(card, name) {
+      if (!card) return [];
+      const yearInWords = convertYearToWords(card.v4);
+      
+      return [
+        { num: '1번', text: `Hello, my name is ${name || '[이름]'}.` },
+        { num: '2번', text: `Today, I want to introduce a great invention, ${card.v1}.` },
+        { num: '3번', text: `It was invented by ${card.v2} in America.` },
+        { num: '4번', text: `Long ago, it was made in ${card.v4}. (${yearInWords})` },
+        { num: '5번', text: `Before this invention, people had a big problem.` },
+        { num: '6번', text: `They had to ${card.v5}.` },
+        { num: '7번', text: `It was very uncomfortable.` },
+        { num: '8번', text: `But now, thanks to this invention, our lives are different.` },
+        { num: '9번', text: `We don't have to ${card.v6} anymore.` },
+        { num: '10번', text: `Today, people usually use it to ${card.v7}.` },
+        { num: '11번', text: `This invention makes our lives so convenient.` },
+        { num: '11-1번', text: `It saves us so much time and energy every day.` },
+        { num: '12번', text: `Thank you for listening to my speech.` }
+      ];
+    }
+
+    // --- Web Speech API TTS (발음 재생) ---
+    function speakText(text) {
+      window.speechSynthesis.cancel(); // 이전 음성 중단
+      const cleanText = text.replace(/\(.*?\)/g, ''); // 괄호 가이드 발음 제외
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9; // 암기용 살짝 천천히
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakAll() {
+      if (currentSentences.length === 0) return;
+      const fullText = currentSentences.map(s => s.text).join(' ');
+      speakText(fullText);
+    }
+
+    function speakCurrentFlash() {
+      if (currentSentences[currentFlashIndex]) {
+        speakText(currentSentences[currentFlashIndex].text);
+      }
+    }
+
+    // --- DB 데이터 불러오기 ---
+    async function loadCuecards() {
+      try {
+        const res = await fetch('/api/cuecards');
+        cuecards = await res.json();
+
+        const select = document.getElementById('cardSelect');
+        if (cuecards.length === 0) {
+          select.innerHTML = '<option value="">등록된 큐카드가 없습니다. 새로 등록해주세요.</option>';
+          return;
+        }
+
+        select.innerHTML = cuecards.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+        currentCard = cuecards[0];
+        updateContent();
+      } catch (err) {
+        alert('데이터를 불러오지 못했습니다.');
+      }
+    }
+
+    // --- UI 업데이트 ---
+    function updateContent() {
+      const name = document.getElementById('speakerName').value;
+      currentSentences = generateSentences(currentCard, name);
+      
+      renderList();
+      renderFlash();
+      renderBlankList();
+    }
+
+    // 리스트 뷰 렌더링
+    function renderList() {
+      const container = document.getElementById('sentenceList');
+      container.innerHTML = currentSentences.map(s => `
+        <div class="flex justify-between items-center p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition">
+          <div>
+            <span class="text-xs font-bold text-indigo-600 mr-2">${s.num}</span>
+            <span class="text-slate-800 font-medium">${s.text}</span>
+          </div>
+          <button onclick="speakText('${s.text.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+            🔊
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // 플래시카드 뷰 렌더링
+    function renderFlash() {
+      if (currentSentences.length === 0) return;
+      const item = currentSentences[currentFlashIndex];
+      document.getElementById('flashNum').innerText = `문장 ${currentFlashIndex + 1} / ${currentSentences.length} (${item.num})`;
+      document.getElementById('flashFront').innerText = `${item.num} 문장을 암기해 보세요!`;
+      document.getElementById('flashBack').innerText = item.text;
+
+      // 뒤집힌 상태면 다시 앞으로
+      if (isFlipped) {
+        document.getElementById('flashCard').classList.remove('rotate-y-180');
+        isFlipped = false;
+      }
+    }
+
+    function flipCard() {
+      const card = document.getElementById('flashCard');
+      card.classList.toggle('rotate-y-180');
+      isFlipped = !isFlipped;
+    }
+
+    function prevCard() {
+      if (currentFlashIndex > 0) {
+        currentFlashIndex--;
+        renderFlash();
+      }
+    }
+
+    function nextCard() {
+      if (currentFlashIndex < currentSentences.length - 1) {
+        currentFlashIndex++;
+        renderFlash();
+      }
+    }
+
+    // 빈칸 모드 렌더링
+    function renderBlankList() {
+      const container = document.getElementById('blankList');
+      if (!currentCard) return;
+
+      const name = document.getElementById('speakerName').value || '____';
+      const yearInWords = convertYearToWords(currentCard.v4);
+
+      const blankHTML = [
+        `1번: Hello, my name is <input type="text" placeholder="[이름]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-32">.`,
+        `2번: Today, I want to introduce a great invention, <input type="text" placeholder="[v1: 발명품]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-44">.`,
+        `3번: It was invented by <input type="text" placeholder="[v2: 발명가]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-36"> in America.`,
+        `4번: Long ago, it was made in <input type="text" placeholder="[v4: 연도]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-28">.`,
+        `5번: Before this invention, people had a big problem.`,
+        `6번: They had to <input type="text" placeholder="[v5: 과거 문제행동]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-64">.`,
+        `7번: It was very uncomfortable.`,
+        `8번: But now, thanks to this invention, our lives are different.`,
+        `9번: We don't have to <input type="text" placeholder="[v6: 힘든 일]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-64"> anymore.`,
+        `10번: Today, people usually use it to <input type="text" placeholder="[v7: 현재 목적]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-64">.`,
+        `11번: This invention makes our lives so convenient.`,
+        `11-1번: It saves us so much time and energy every day.`,
+        `12번: Thank you for listening to my speech.`
+      ];
+
+      container.innerHTML = blankHTML.map(item => `<div class="p-2 border-b border-slate-100">${item}</div>`).join('');
+    }
+
+    // 탭 전환
+    function switchMode(mode) {
+      ['list', 'flash', 'blank'].forEach(m => {
+        document.getElementById(`view-${m}`).classList.add('hidden');
+        document.getElementById(`tab-${m}`).classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
+        document.getElementById(`tab-${m}`).classList.add('text-slate-600');
+      });
+
+      document.getElementById(`view-${mode}`).classList.remove('hidden');
+      document.getElementById(`tab-${mode}`).classList.add('bg-white', 'text-indigo-600', 'shadow-sm');
+      document.getElementById(`tab-${mode}`).classList.remove('text-slate-600');
+    }
+
+    // 이벤트 리스너
+    document.getElementById('cardSelect').addEventListener('change', (e) => {
+      currentCard = cuecards.find(c => c.id == e.target.value);
+      updateContent();
+    });
+
+    document.getElementById('speakerName').addEventListener('input', () => {
+      updateContent();
+    });
+
+    // 초기화
+    window.onload = () => {
+      loadCuecards();
+      switchMode('list');
+    };
+  </script>
+</body>
+</html>
