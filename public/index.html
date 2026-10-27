@@ -3,318 +3,522 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>큐카드 암기 연습기</title>
+  <title>영어 말하기 수행평가 대비 큐카드 암기 연습기</title>
+  <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    /* 3D Flip Card Effect */
-    .perspective { perspective: 1000px; }
-    .transform-style-3d { transform-style: preserve-3d; }
-    .backface-hidden { backface-visibility: hidden; }
-    .rotate-y-180 { transform: rotateY(180deg); }
+    body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
+    .card-flip-container { perspective: 1000px; }
+    .card-flip-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+    .card-flipped .card-flip-inner { transform: rotateY(180deg); }
+    .card-front, .card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .card-back { transform: rotateY(180deg); }
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
-  <!-- 네비게이션 바 -->
-  <nav class="bg-indigo-600 text-white shadow-md mb-8">
-    <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-      <h1 class="text-xl font-bold flex items-center gap-2">
-        <span>🎤</span> 영문 발표 큐카드 암기 연습기
-      </h1>
-      <div class="flex gap-3">
-        <a href="/" class="bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded-lg text-sm font-medium transition">연습하기</a>
-        <a href="/add" class="bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 rounded-lg text-sm font-medium transition">+ 카드 추가</a>
-        <a href="/del" class="bg-rose-500 hover:bg-rose-600 px-3 py-1.5 rounded-lg text-sm font-medium transition">- 카드 삭제</a>
-      </div>
-    </div>
-  </nav>
 
-  <main class="max-w-4xl mx-auto px-4 space-y-6">
-    <!-- 설정 및 대입 정보 입력 영역 -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">1. 큐카드 선택</label>
-        <select id="cardSelect" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-          <option value="">데이터를 불러오는 중...</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">2. 발표자 이름 입력 ([이름])</label>
-        <input type="text" id="speakerName" value="Minsoo" placeholder="이름을 입력하세요" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-      </div>
-    </div>
-
-    <!-- 모드 선택 탭 -->
-    <div class="flex bg-slate-200 p-1.5 rounded-xl text-sm font-semibold">
-      <button onclick="switchMode('list')" id="tab-list" class="flex-1 py-2.5 rounded-lg transition text-slate-600"> 전체 리스트 모드</button>
-      <button onclick="switchMode('flash')" id="tab-flash" class="flex-1 py-2.5 rounded-lg transition text-slate-600"> 플래시카드 (3D Flip)</button>
-      <button onclick="switchMode('blank')" id="tab-blank" class="flex-1 py-2.5 rounded-lg transition text-slate-600"> 빈칸 암기 모드</button>
-    </div>
-
-    <!-- [뷰 1] 전체 리스트 모드 -->
-    <div id="view-list" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-      <div class="flex justify-between items-center mb-4 border-b pb-3">
-        <h2 class="text-lg font-bold text-slate-700">전체 대본 (13개 문장)</h2>
-        <button onclick="speakAll()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition">
-          <span>🔊</span> 전체 읽기
-        </button>
-      </div>
-      <div id="sentenceList" class="space-y-2"></div>
-    </div>
-
-    <!-- [뷰 2] 플래시카드 모드 -->
-    <div id="view-flash" class="hidden space-y-4">
-      <div class="perspective w-full h-64 cursor-pointer" onclick="flipCard()">
-        <div id="flashCard" class="transform-style-3d relative w-full h-full duration-500 rounded-2xl shadow-md border border-slate-200 bg-white">
-          <!-- 앞면 -->
-          <div class="backface-hidden absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-            <span id="flashNum" class="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full mb-3">문장 1/13</span>
-            <p id="flashFront" class="text-2xl font-bold text-slate-800">문장을 클릭하면 뒷면이 보입니다.</p>
-            <span class="text-xs text-slate-400 mt-4">클릭하여 뒤집기 🔄</span>
-          </div>
-          <!-- 뒷면 -->
-          <div class="backface-hidden rotate-y-180 absolute inset-0 bg-indigo-50 rounded-2xl flex flex-col items-center justify-center p-6 text-center">
-            <p id="flashBack" class="text-xl font-medium text-indigo-950">영어 대본 문장</p>
-            <button onclick="event.stopPropagation(); speakCurrentFlash();" class="mt-4 bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1 hover:bg-indigo-700">
-              🔊 발음 듣기
-            </button>
-          </div>
+  <!-- Header Section -->
+  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30 border-b border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="bg-slate-800 p-2 rounded-lg border border-slate-700">
+          <i class="fa-solid fa-graduation-cap text-xl text-indigo-400"></i>
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-100">영어 말하기 수행평가 대비 큐카드 암기 연습기</h1>
+          <p class="text-xs text-slate-400">Speech & Presentation Memorization Studio</p>
         </div>
       </div>
-      <!-- 카드 컨트롤 버튼 -->
-      <div class="flex justify-between items-center">
-        <button onclick="prevCard()" class="bg-white border border-slate-300 px-5 py-2.5 rounded-xl font-semibold hover:bg-slate-50 transition">← 이전 문장</button>
-        <button onclick="speakCurrentFlash()" class="bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-emerald-600 transition">🔊 발음 듣기</button>
-        <button onclick="nextCard()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition">다음 문장 →</button>
+      
+      <!-- Top Action Buttons & DB Selector -->
+      <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+        <div class="flex items-center space-x-2 bg-slate-800 p-1.5 rounded-lg border border-slate-700 w-full sm:w-auto">
+          <span class="text-xs font-semibold px-2 text-slate-300 flex items-center gap-1 shrink-0">
+            <i class="fa-solid fa-database text-indigo-400"></i> 큐카드:
+          </span>
+          <select id="dbCardSelect" onchange="onCardSelectChange(this.value)" class="bg-slate-900 text-slate-100 text-xs font-medium rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 border border-slate-700 cursor-pointer w-full sm:w-auto">
+            <option value="">불러오는 중...</option>
+          </select>
+        </div>
+        <a href="/add" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition border border-indigo-500 flex items-center gap-1">
+          <i class="fa-solid fa-plus"></i> 카드 추가
+        </a>
+        <a href="/del" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition border border-rose-500 flex items-center gap-1">
+          <i class="fa-solid fa-trash"></i> 카드 삭제
+        </a>
       </div>
     </div>
+  </header>
 
-    <!-- [뷰 3] 빈칸 암기 테스트 모드 -->
-    <div id="view-blank" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-      <div class="flex justify-between items-center border-b pb-3">
-        <h2 class="text-lg font-bold text-slate-700">핵심 변수 빈칸 뚫기 테스트</h2>
-        <button onclick="renderBlankList()" class="text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium">다시 설정</button>
+  <main class="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT PANEL: 발표자 정보 및 DB 매핑 데이터 요약 -->
+    <section class="lg:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4 h-fit">
+      <div class="border-b border-slate-100 pb-3">
+        <h2 class="font-bold text-base text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-user-pen text-indigo-600"></i> 발표자 정보
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">이름을 입력하면 1번 문장에 즉시 대입됩니다.</p>
       </div>
-      <div id="blankList" class="space-y-3 leading-relaxed"></div>
-    </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block font-semibold text-slate-700 text-xs mb-1.5">발표자 이름 [이름]</label>
+          <input type="text" id="userName" value="Minsoo" oninput="updateCards();" class="w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm" placeholder="예: Minsoo 또는 Gil-dong">
+        </div>
+
+        <div id="cardInfoBox" class="bg-slate-50 border border-slate-200 rounded-lg p-3.5 text-xs space-y-1.5 text-slate-600">
+          <div class="font-bold text-slate-700 border-b border-slate-200 pb-1 flex items-center gap-1">
+            <i class="fa-solid fa-circle-info text-indigo-600"></i> 선택된 DB 항목 값
+          </div>
+          <div id="infoContent">선택된 큐카드가 없습니다.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: 탭 선택 및 모드별 연습 화면 -->
+    <section class="lg:col-span-8 flex flex-col space-y-4">
+
+      <!-- Control Bar -->
+      <div class="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-2 justify-between items-center">
+        <div class="flex space-x-1 w-full sm:w-auto">
+          <button id="btnTabSlide" onclick="switchMode('slide')" class="flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow-sm">
+            <i class="fa-solid fa-copy"></i> 플래시카드
+          </button>
+          <button id="btnTabList" onclick="switchMode('list')" class="flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-list-ol"></i> 전체 리스트
+          </button>
+          <button id="btnTabBlank" onclick="switchMode('blank')" class="flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-100">
+            <i class="fa-solid fa-eye-slash"></i> 빈칸 암기 테스트
+          </button>
+        </div>
+
+        <button onclick="speakAll()" id="btnSpeakAll" class="w-full sm:w-auto px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-all border border-slate-300 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-volume-high text-slate-600"></i> 전체 연속 듣기
+        </button>
+      </div>
+
+      <!-- MODE 1: 플래시카드 (3D Flip) -->
+      <div id="viewSlide" class="flex-1 flex flex-col justify-between space-y-4">
+        <div id="flashcardContainer" onclick="flipCard()" class="card-flip-container relative w-full h-80 sm:h-96 cursor-pointer group">
+          <div id="cardFlipInner" class="card-flip-inner absolute w-full h-full rounded-xl shadow-md border border-slate-200 bg-white">
+            
+            <!-- 카드 앞면 (영어) -->
+            <div class="card-front absolute inset-0 p-6 sm:p-8 flex flex-col justify-between rounded-xl bg-slate-50">
+              <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <span id="slideCardNum" class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-200">
+                  CARD 1 / 13
+                </span>
+                <span class="text-xs text-slate-400 group-hover:text-indigo-600 transition-colors flex items-center gap-1">
+                  <i class="fa-solid fa-rotate"></i> 클릭하여 한글 해석 보기
+                </span>
+              </div>
+
+              <div class="my-auto text-center px-2">
+                <p id="slideCardText" class="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-800 leading-relaxed tracking-tight"></p>
+                <p id="slideYearPronounce" class="text-xs sm:text-sm font-bold text-indigo-600 mt-2 hidden"></p>
+              </div>
+
+              <div class="flex justify-between items-center border-t border-slate-200 pt-3">
+                <button id="btnCurrentSpeak" onclick="event.stopPropagation(); speakCurrentCard();" class="p-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-sm">
+                  <i class="fa-solid fa-volume-high text-indigo-600"></i> <span>발음 듣기</span>
+                </button>
+                <span id="slideKeyHint" class="text-xs font-medium text-slate-500 bg-slate-200 px-2.5 py-1 rounded"></span>
+              </div>
+            </div>
+
+            <!-- 카드 뒷면 (한글) -->
+            <div class="card-back absolute inset-0 p-6 sm:p-8 flex flex-col justify-between rounded-xl bg-slate-800 text-white">
+              <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <span class="text-xs font-bold text-indigo-300">
+                  <i class="fa-solid fa-language"></i> 한글 뜻 및 구조 가이드
+                </span>
+                <span class="text-xs text-slate-400 flex items-center gap-1">
+                  <i class="fa-solid fa-rotate"></i> 클릭하여 영어로 돌아가기
+                </span>
+              </div>
+
+              <div class="my-auto text-center px-2">
+                <p id="slideCardKor" class="text-lg sm:text-xl font-bold text-slate-100 leading-relaxed"></p>
+              </div>
+
+              <div class="text-right border-t border-slate-700 pt-3 text-xs text-slate-400">
+                키보드 <kbd class="px-1.5 py-0.5 bg-slate-700 rounded border border-slate-600 text-slate-200">←</kbd> <kbd class="px-1.5 py-0.5 bg-slate-700 rounded border border-slate-600 text-slate-200">→</kbd> 이동, <kbd class="px-1.5 py-0.5 bg-slate-700 rounded border border-slate-600 text-slate-200">Space</kbd> 뒤집기
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+          <button onclick="prevCard()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-chevron-left"></i> 이전 Card
+          </button>
+          
+          <div class="text-xs font-bold text-slate-500">
+            <span id="currentCardIndex" class="text-indigo-600 font-extrabold text-sm">1</span> / 13
+          </div>
+
+          <button onclick="nextCard()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-xs transition-all shadow-sm flex items-center gap-1.5">
+            다음 Card <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- MODE 2: 전체 리스트 모드 -->
+      <div id="viewList" class="hidden space-y-3">
+        <div class="bg-slate-50 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between">
+          <span><i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i> 전체 발표 문장(13개)을 순서대로 확인합니다.</span>
+          <button onclick="window.print()" class="text-xs bg-white text-slate-700 font-semibold px-2.5 py-1 rounded border border-slate-300 shadow-sm hover:bg-slate-100 transition-colors">
+            <i class="fa-solid fa-print"></i> 인쇄 / PDF 저장
+          </button>
+        </div>
+        <div id="fullListContainer" class="space-y-2.5"></div>
+      </div>
+
+      <!-- MODE 3: 빈칸 암기 테스트 모드 -->
+      <div id="viewBlank" class="hidden space-y-3">
+        <div class="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-2.5 rounded-xl text-xs font-medium flex justify-between items-center">
+          <span><i class="fa-solid fa-lightbulb text-amber-600 mr-1"></i> **검정 블라인드**를 누르면 해제/동기화됩니다.</span>
+          <button onclick="toggleAllBlanks()" class="text-xs bg-white text-amber-900 font-semibold px-2.5 py-1 rounded border border-amber-300 shadow-sm hover:bg-amber-100 transition-colors">
+            <i class="fa-solid fa-eye"></i> 전체 정답 보기/숨기기
+          </button>
+        </div>
+        <div id="blankListContainer" class="space-y-2.5"></div>
+      </div>
+
+    </section>
   </main>
 
   <script>
-    let cuecards = [];
-    let currentCard = null;
-    let currentSentences = [];
-    let currentFlashIndex = 0;
+    let dbCardsList = [];
+    let activeCardData = null;
+    let currentCardIndex = 0;
     let isFlipped = false;
+    let hideAllBlanksState = true;
 
-    // --- 연도 영어 발음 읽기 변환 로직 (예: 2007 -> two thousand and seven) ---
+    // ==========================================
+    // 🔊 Web Speech API 기반 TTS 엔진
+    // ==========================================
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) {
+        alert('이 브라우저는 음성 합성을 지원하지 않습니다.');
+        return;
+      }
+      window.speechSynthesis.cancel(); // 진행 중인 음성 중단
+      
+      // 태그 및 괄호 발음 안내 제거
+      const cleanText = text.replace(/<[^>]*>/g, '').replace(/\(.*?\)/g, '').trim();
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakCurrentCard() {
+      const cards = getCardData();
+      if (cards.length > 0 && cards[currentCardIndex]) {
+        speakText(cards[currentCardIndex].speakEng);
+      }
+    }
+
+    function speakAll() {
+      const cards = getCardData();
+      if (!cards || cards.length === 0) return;
+      const fullSpeech = cards.map(c => c.speakEng).join(' ');
+      speakText(fullSpeech);
+    }
+
+    // ==========================================
+    // 🔢 연도 읽기 발음 변환 함수 (v4)
+    // ==========================================
     function convertYearToWords(yearStr) {
-      const num = parseInt(yearStr, 10);
-      if (isNaN(num)) return yearStr;
+      if (!yearStr) return { speak: "2007", display: "" };
+      const num = parseInt(yearStr.toString().trim(), 10);
+      if (isNaN(num)) return { speak: yearStr, display: "" };
 
       const ones = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
       const teens = ["ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
       const tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
 
+      const numToWords = (n) => {
+        if (n < 10) return ones[n];
+        if (n < 20) return teens[n - 10];
+        const t = Math.floor(n / 10);
+        const o = n % 10;
+        return o === 0 ? tens[t] : `${tens[t]} ${ones[o]}`;
+      };
+
+      let speakWord = "";
       if (num >= 2000 && num <= 2009) {
-        return num === 2000 ? "two thousand" : `two thousand and ${ones[num % 10]}`;
+        speakWord = num === 2000 ? "two thousand" : `two thousand and ${ones[num % 10]}`;
       } else if (num >= 1000 && num <= 9999) {
-        const firstTwo = Math.floor(num / 100);
-        const lastTwo = num % 100;
-
-        let firstPart = firstTwo < 20 ? teens[firstTwo - 10] || ones[firstTwo] : `${tens[Math.floor(firstTwo / 10)]} ${ones[firstTwo % 10]}`;
-        let lastPart = "";
-
-        if (lastTwo < 10) {
-          lastPart = lastTwo === 0 ? "" : `oh ${ones[lastTwo]}`;
-        } else if (lastTwo < 20) {
-          lastPart = teens[lastTwo - 10];
-        } else {
-          lastPart = `${tens[Math.floor(lastTwo / 10)]} ${ones[lastTwo % 10]}`;
-        }
-        return `${firstPart} ${lastPart}`.trim();
+        const century = Math.floor(num / 100);
+        const decade = num % 100;
+        const cWord = numToWords(century);
+        if (decade === 0) speakWord = `${cWord} hundred`;
+        else if (decade < 10) speakWord = `${cWord} oh ${ones[decade]}`;
+        else speakWord = `${cWord} ${numToWords(decade)}`;
+      } else {
+        speakWord = yearStr.toString();
       }
-      return yearStr;
+
+      return { speak: speakWord, display: `🗣️ 발음 가이드: [${speakWord}]` };
     }
 
-    // --- 13개 문장 생성 로직 ---
-    function generateSentences(card, name) {
-      if (!card) return [];
-      const yearInWords = convertYearToWords(card.v4);
-      
+    // ==========================================
+    // 🃏 13개 고정 문장 생성 및 데이터 매핑
+    // ==========================================
+    function getCardData() {
+      const name = document.getElementById('userName').value.trim() || 'Minsoo';
+      const d = activeCardData || {
+        v1: "the washing machine",
+        v2: "Alva Fisher",
+        v4: "1908",
+        v5: "wash all clothes by hand",
+        v6: "do hard laundry work",
+        v7: "wash a lot of clothes quickly"
+      };
+
+      const v1 = d.v1 || "the washing machine";
+      const v2 = d.v2 || "Alva Fisher";
+      const v4 = d.v4 || "1908";
+      const v5 = d.v5 || "wash all clothes by hand";
+      const v6 = d.v6 || "do hard laundry work";
+      const v7 = d.v7 || "wash a lot of clothes quickly";
+
+      const yearInfo = convertYearToWords(v4);
+
       return [
-        { num: '1번', text: `Hello, my name is ${name || '[이름]'}.` },
-        { num: '2번', text: `Today, I want to introduce a great invention, ${card.v1}.` },
-        { num: '3번', text: `It was invented by ${card.v2} in America.` },
-        { num: '4번', text: `Long ago, it was made in ${card.v4}. (${yearInWords})` },
-        { num: '5번', text: `Before this invention, people had a big problem.` },
-        { num: '6번', text: `They had to ${card.v5}.` },
-        { num: '7번', text: `It was very uncomfortable.` },
-        { num: '8번', text: `But now, thanks to this invention, our lives are different.` },
-        { num: '9번', text: `We don't have to ${card.v6} anymore.` },
-        { num: '10번', text: `Today, people usually use it to ${card.v7}.` },
-        { num: '11번', text: `This invention makes our lives so convenient.` },
-        { num: '11-1번', text: `It saves us so much time and energy every day.` },
-        { num: '12번', text: `Thank you for listening to my speech.` }
+        { num: "1", eng: `Hello, my name is <span class="text-indigo-600 font-bold underline">${name}</span>.`, plainEng: `Hello, my name is ${name}.`, speakEng: `Hello, my name is ${name}.`, kor: `안녕하세요, 제 이름은 ${name}입니다.`, targetEng: name, targetKor: name, hint: "[이름]" },
+        { num: "2", eng: `Today, I want to introduce a great invention, <span class="text-indigo-600 font-bold underline">${v1}</span>.`, plainEng: `Today, I want to introduce a great invention, ${v1}.`, speakEng: `Today, I want to introduce a great invention, ${v1}.`, kor: `오늘 저는 위대한 발명품인 ${v1}을(를) 소개하고자 합니다.`, targetEng: v1, targetKor: v1, hint: "[1] 발명품" },
+        { num: "3", eng: `It was invented by <span class="text-indigo-600 font-bold underline">${v2}</span> in America.`, plainEng: `It was invented by ${v2} in America.`, speakEng: `It was invented by ${v2} in America.`, kor: `이것은 미국의 ${v2}에 의해 발명되었습니다.`, targetEng: v2, targetKor: v2, hint: "[2] 발명가" },
+        { num: "4", eng: `Long ago, it was made in <span class="text-indigo-600 font-bold underline">${v4}</span>.`, plainEng: `Long ago, it was made in ${v4}.`, speakEng: `Long ago, it was made in ${yearInfo.speak}.`, kor: `오래전, 이것은 ${v4}년에 만들어졌습니다.`, targetEng: v4, targetKor: `${v4}년`, hint: "[4] 연도", yearGuide: yearInfo.display },
+        { num: "5", eng: `Before this invention, people had a big problem.`, plainEng: `Before this invention, people had a big problem.`, speakEng: `Before this invention, people had a big problem.`, kor: `이 발명품이 있기 전, 사람들에게는 큰 문제가 있었습니다.`, targetEng: "big problem", targetKor: "큰 문제", hint: "배경 문제" },
+        { num: "6", eng: `They had to <span class="text-indigo-600 font-bold underline">${v5}</span>.`, plainEng: `They had to ${v5}.`, speakEng: `They had to ${v5}.`, kor: `사람들은 ${v5} 해야만 했습니다.`, targetEng: v5, targetKor: v5, hint: "[5] 과거 문제행동" },
+        { num: "7", eng: `It was very uncomfortable.`, plainEng: `It was very uncomfortable.`, speakEng: `It was very uncomfortable.`, kor: `그것은 매우 불편했습니다.`, targetEng: "uncomfortable", targetKor: "불편했습니다", hint: "과거 문제점" },
+        { num: "8", eng: `But now, thanks to this invention, our lives are different.`, plainEng: `But now, thanks to this invention, our lives are different.`, speakEng: `But now, thanks to this invention, our lives are different.`, kor: `하지만 이제 이 발명품 덕분에 우리의 삶은 달라졌습니다.`, targetEng: "different", targetKor: "달라졌습니다", hint: "변화의 계기" },
+        { num: "9", eng: `We don't have to <span class="text-indigo-600 font-bold underline">${v6}</span> anymore.`, plainEng: `We don't have to ${v6} anymore.`, speakEng: `We don't have to ${v6} anymore.`, kor: `우리는 더 이상 ${v6} 할 필요가 없습니다.`, targetEng: v6, targetKor: v6, hint: "[6] 힘든 일" },
+        { num: "10", eng: `Today, people usually use it to <span class="text-indigo-600 font-bold underline">${v7}</span>.`, plainEng: `Today, people usually use it to ${v7}.`, speakEng: `Today, people usually use it to ${v7}.`, kor: `오늘날 사람들은 주로 ${v7} 하기 위해 이것을 사용합니다.`, targetEng: v7, targetKor: v7, hint: "[7] 현재 목적" },
+        { num: "11", eng: `This invention makes our lives so convenient.`, plainEng: `This invention makes our lives so convenient.`, speakEng: `This invention makes our lives so convenient.`, kor: `이 발명품은 우리의 삶을 매우 편리하게 만들어 줍니다.`, targetEng: "convenient", targetKor: "편리하게", hint: "장점 1" },
+        { num: "11-1", eng: `It saves us so much time and energy every day.`, plainEng: `It saves us so much time and energy every day.`, speakEng: `It saves us so much time and energy every day.`, kor: `이것은 매일 우리의 시간과 에너지를 크게 아껴줍니다.`, targetEng: "time and energy", targetKor: "시간과 에너지를", hint: "장점 2" },
+        { num: "12", eng: `Thank you for listening to my speech.`, plainEng: `Thank you for listening to my speech.`, speakEng: `Thank you for listening to my speech.`, kor: `제 발표를 들어주셔서 감사합니다.`, targetEng: "listening", targetKor: "들어주셔서", hint: "마무리" }
       ];
     }
 
-    // --- Web Speech API TTS (발음 재생) ---
-    function speakText(text) {
-      window.speechSynthesis.cancel(); // 이전 음성 중단
-      const cleanText = text.replace(/\(.*?\)/g, ''); // 괄호 가이드 발음 제외
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9; // 암기용 살짝 천천히
-      window.speechSynthesis.speak(utterance);
-    }
+    // ==========================================
+    // 🔄 DB 통신 및 UI 동기화
+    // ==========================================
+    window.onload = async function() {
+      await fetchDBCards();
+    };
 
-    function speakAll() {
-      if (currentSentences.length === 0) return;
-      const fullText = currentSentences.map(s => s.text).join(' ');
-      speakText(fullText);
-    }
-
-    function speakCurrentFlash() {
-      if (currentSentences[currentFlashIndex]) {
-        speakText(currentSentences[currentFlashIndex].text);
-      }
-    }
-
-    // --- DB 데이터 불러오기 ---
-    async function loadCuecards() {
+    async function fetchDBCards() {
       try {
         const res = await fetch('/api/cuecards');
-        cuecards = await res.json();
+        dbCardsList = await res.json();
 
-        const select = document.getElementById('cardSelect');
-        if (cuecards.length === 0) {
-          select.innerHTML = '<option value="">등록된 큐카드가 없습니다. 새로 등록해주세요.</option>';
+        const select = document.getElementById('dbCardSelect');
+        select.innerHTML = '';
+
+        if (!dbCardsList || dbCardsList.length === 0) {
+          select.innerHTML = '<option value="">(등록된 큐카드가 없습니다)</option>';
+        } else {
+          dbCardsList.forEach((card, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.textContent = card.title || `큐카드 ${card.id}`;
+            select.appendChild(opt);
+          });
+          onCardSelectChange(0);
           return;
         }
-
-        select.innerHTML = cuecards.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-        currentCard = cuecards[0];
-        updateContent();
       } catch (err) {
-        alert('데이터를 불러오지 못했습니다.');
+        console.warn('DB 데이터 로드 실패:', err);
       }
+      updateCards();
     }
 
-    // --- UI 업데이트 ---
-    function updateContent() {
-      const name = document.getElementById('speakerName').value;
-      currentSentences = generateSentences(currentCard, name);
-      
-      renderList();
-      renderFlash();
+    function onCardSelectChange(index) {
+      if (!dbCardsList || dbCardsList.length === 0) return;
+      activeCardData = dbCardsList[index];
+
+      const yearInfo = convertYearToWords(activeCardData.v4);
+      document.getElementById('infoContent').innerHTML = `
+        <p><strong>[1] 발명품(v1):</strong> ${activeCardData.v1 || ''}</p>
+        <p><strong>[2] 발명가(v2):</strong> ${activeCardData.v2 || ''}</p>
+        <p><strong>[4] 연도(v4):</strong> ${activeCardData.v4 || ''} <span class="text-indigo-600 font-semibold">(${yearInfo.speak})</span></p>
+        <p><strong>[5] 과거문제(v5):</strong> ${activeCardData.v5 || ''}</p>
+        <p><strong>[6] 힘든일(v6):</strong> ${activeCardData.v6 || ''}</p>
+        <p><strong>[7] 현재목적(v7):</strong> ${activeCardData.v7 || ''}</p>
+      `;
+
+      currentCardIndex = 0;
+      updateCards();
+    }
+
+    function updateCards() {
+      renderSlideCard();
+      renderFullList();
       renderBlankList();
     }
 
-    // 리스트 뷰 렌더링
-    function renderList() {
-      const container = document.getElementById('sentenceList');
-      container.innerHTML = currentSentences.map(s => `
-        <div class="flex justify-between items-center p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition">
-          <div>
-            <span class="text-xs font-bold text-indigo-600 mr-2">${s.num}</span>
-            <span class="text-slate-800 font-medium">${s.text}</span>
-          </div>
-          <button onclick="speakText('${s.text.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
-            🔊
-          </button>
-        </div>
-      `).join('');
-    }
+    // 1. 플래시카드 렌더링
+    function renderSlideCard() {
+      const cards = getCardData();
+      if (cards.length === 0) return;
+      const card = cards[currentCardIndex];
 
-    // 플래시카드 뷰 렌더링
-    function renderFlash() {
-      if (currentSentences.length === 0) return;
-      const item = currentSentences[currentFlashIndex];
-      document.getElementById('flashNum').innerText = `문장 ${currentFlashIndex + 1} / ${currentSentences.length} (${item.num})`;
-      document.getElementById('flashFront').innerText = `${item.num} 문장을 암기해 보세요!`;
-      document.getElementById('flashBack').innerText = item.text;
+      document.getElementById('slideCardNum').innerText = `CARD ${card.num} / 12 (총 13문장)`;
+      document.getElementById('slideCardText').innerHTML = card.eng;
+      document.getElementById('slideCardKor').innerText = card.kor;
+      document.getElementById('slideKeyHint').innerText = card.hint;
+      document.getElementById('currentCardIndex').innerText = currentCardIndex + 1;
 
-      // 뒤집힌 상태면 다시 앞으로
-      if (isFlipped) {
-        document.getElementById('flashCard').classList.remove('rotate-y-180');
-        isFlipped = false;
+      const yearElem = document.getElementById('slideYearPronounce');
+      if (card.yearGuide) {
+        yearElem.innerText = card.yearGuide;
+        yearElem.classList.remove('hidden');
+      } else {
+        yearElem.classList.add('hidden');
       }
+
+      document.getElementById('flashcardContainer').classList.remove('card-flipped');
+      isFlipped = false;
     }
 
     function flipCard() {
-      const card = document.getElementById('flashCard');
-      card.classList.toggle('rotate-y-180');
+      const container = document.getElementById('flashcardContainer');
       isFlipped = !isFlipped;
+      if (isFlipped) container.classList.add('card-flipped');
+      else container.classList.remove('card-flipped');
     }
 
     function prevCard() {
-      if (currentFlashIndex > 0) {
-        currentFlashIndex--;
-        renderFlash();
-      }
+      if (currentCardIndex > 0) { currentCardIndex--; renderSlideCard(); }
     }
 
     function nextCard() {
-      if (currentFlashIndex < currentSentences.length - 1) {
-        currentFlashIndex++;
-        renderFlash();
-      }
+      const cards = getCardData();
+      if (currentCardIndex < cards.length - 1) { currentCardIndex++; renderSlideCard(); }
     }
 
-    // 빈칸 모드 렌더링
+    // 2. 전체 리스트 렌더링
+    function renderFullList() {
+      const cards = getCardData();
+      const container = document.getElementById('fullListContainer');
+      container.innerHTML = '';
+
+      cards.forEach((card) => {
+        const item = document.createElement('div');
+        item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3";
+        item.innerHTML = `
+          <div class="flex items-start space-x-3 w-full">
+            <span class="bg-indigo-50 text-indigo-700 font-bold text-xs px-2.5 py-1 rounded border border-indigo-200 shrink-0">${card.num}</span>
+            <div class="space-y-1 flex-1">
+              <p class="text-base font-bold text-slate-800">${card.eng}</p>
+              ${card.yearGuide ? `<p class="text-xs text-indigo-600 font-semibold">${card.yearGuide}</p>` : ''}
+              <p class="text-xs text-slate-500">${card.kor}</p>
+            </div>
+          </div>
+          <button onclick="speakText('${card.speakEng.replace(/'/g, "\\'")}')" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-xs font-semibold shrink-0 flex items-center gap-1">🔊 듣기</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // 3. 빈칸 테스트 렌더링
     function renderBlankList() {
-      const container = document.getElementById('blankList');
-      if (!currentCard) return;
+      const cards = getCardData();
+      const container = document.getElementById('blankListContainer');
+      container.innerHTML = '';
 
-      const name = document.getElementById('speakerName').value || '____';
-      const yearInWords = convertYearToWords(currentCard.v4);
+      cards.forEach((card, idx) => {
+        let blankEng = card.plainEng;
+        let blankKor = card.kor;
 
-      const blankHTML = [
-        `1번: Hello, my name is <input type="text" placeholder="[이름]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-32">.`,
-        `2번: Today, I want to introduce a great invention, <input type="text" placeholder="[v1: 발명품]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-44">.`,
-        `3번: It was invented by <input type="text" placeholder="[v2: 발명가]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-36"> in America.`,
-        `4번: Long ago, it was made in <input type="text" placeholder="[v4: 연도]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-28">.`,
-        `5번: Before this invention, people had a big problem.`,
-        `6번: They had to <input type="text" placeholder="[v5: 과거 문제행동]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-64">.`,
-        `7번: It was very uncomfortable.`,
-        `8번: But now, thanks to this invention, our lives are different.`,
-        `9번: We don't have to <input type="text" placeholder="[v6: 힘든 일]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-64"> anymore.`,
-        `10번: Today, people usually use it to <input type="text" placeholder="[v7: 현재 목적]" class="border-b-2 border-indigo-400 focus:outline-none px-2 py-0.5 text-center text-indigo-700 font-bold w-64">.`,
-        `11번: This invention makes our lives so convenient.`,
-        `11-1번: It saves us so much time and energy every day.`,
-        `12번: Thank you for listening to my speech.`
-      ];
+        if (card.targetEng && card.plainEng.includes(card.targetEng)) {
+          const hiddenEngSpan = `<span onclick="togglePair(${idx})" class="blank-pair-${idx} bg-slate-800 text-transparent font-bold px-2 py-0.5 rounded cursor-pointer select-none inline-block transition-all" title="클릭하여 보기/숨기기">${card.targetEng}</span>`;
+          blankEng = card.plainEng.replace(card.targetEng, hiddenEngSpan);
+        }
 
-      container.innerHTML = blankHTML.map(item => `<div class="p-2 border-b border-slate-100">${item}</div>`).join('');
+        if (card.targetKor && card.kor.includes(card.targetKor)) {
+          const hiddenKorSpan = `<span onclick="togglePair(${idx})" class="blank-pair-${idx} bg-slate-800 text-transparent font-bold px-2 py-0.5 rounded cursor-pointer select-none inline-block transition-all" title="클릭하여 보기/숨기기">${card.targetKor}</span>`;
+          blankKor = card.kor.replace(card.targetKor, hiddenKorSpan);
+        }
+
+        const item = document.createElement('div');
+        item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col space-y-2";
+        item.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="bg-amber-100 text-amber-800 font-bold text-xs px-2.5 py-1 rounded">${card.num}번 문장</span>
+            <span class="text-xs text-slate-400 font-medium">${card.hint}</span>
+          </div>
+          <p class="text-base font-semibold text-slate-800 leading-relaxed">${blankEng}</p>
+          <p class="text-xs text-slate-500 border-t border-slate-100 pt-2"><i class="fa-solid fa-language text-slate-400"></i> ${blankKor}</p>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function togglePair(cardIdx) {
+      const elements = document.querySelectorAll(`.blank-pair-${cardIdx}`);
+      elements.forEach(el => {
+        el.classList.toggle('bg-slate-800');
+        el.classList.toggle('text-transparent');
+      });
+    }
+
+    function toggleAllBlanks() {
+      const cards = getCardData();
+      hideAllBlanksState = !hideAllBlanksState;
+
+      cards.forEach((_, idx) => {
+        const elements = document.querySelectorAll(`.blank-pair-${idx}`);
+        elements.forEach(el => {
+          if (hideAllBlanksState) {
+            el.classList.add('bg-slate-800', 'text-transparent');
+          } else {
+            el.classList.remove('bg-slate-800', 'text-transparent');
+          }
+        });
+      });
     }
 
     // 탭 전환
     function switchMode(mode) {
-      ['list', 'flash', 'blank'].forEach(m => {
-        document.getElementById(`view-${m}`).classList.add('hidden');
-        document.getElementById(`tab-${m}`).classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
-        document.getElementById(`tab-${m}`).classList.add('text-slate-600');
-      });
+      document.getElementById('viewSlide').classList.add('hidden');
+      document.getElementById('viewList').classList.add('hidden');
+      document.getElementById('viewBlank').classList.add('hidden');
 
-      document.getElementById(`view-${mode}`).classList.remove('hidden');
-      document.getElementById(`tab-${mode}`).classList.add('bg-white', 'text-indigo-600', 'shadow-sm');
-      document.getElementById(`tab-${mode}`).classList.remove('text-slate-600');
+      document.getElementById('btnTabSlide').className = "flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100";
+      document.getElementById('btnTabList').className = "flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100";
+      document.getElementById('btnTabBlank').className = "flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100";
+
+      if (mode === 'slide') {
+        document.getElementById('viewSlide').classList.remove('hidden');
+        document.getElementById('btnTabSlide').className = "flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-sm";
+      } else if (mode === 'list') {
+        document.getElementById('viewList').classList.remove('hidden');
+        document.getElementById('btnTabList').className = "flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-sm";
+      } else if (mode === 'blank') {
+        document.getElementById('viewBlank').classList.remove('hidden');
+        document.getElementById('btnTabBlank').className = "flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-sm";
+      }
     }
 
-    // 이벤트 리스너
-    document.getElementById('cardSelect').addEventListener('change', (e) => {
-      currentCard = cuecards.find(c => c.id == e.target.value);
-      updateContent();
+    // 키보드 조작 이벤트
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('viewSlide').classList.contains('hidden')) return;
+      if (e.key === 'ArrowLeft') prevCard();
+      else if (e.key === 'ArrowRight') nextCard();
+      else if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        flipCard();
+      }
     });
-
-    document.getElementById('speakerName').addEventListener('input', () => {
-      updateContent();
-    });
-
-    // 초기화
-    window.onload = () => {
-      loadCuecards();
-      switchMode('list');
-    };
   </script>
 </body>
 </html>
