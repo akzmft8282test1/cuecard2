@@ -1,7 +1,7 @@
 {
   "name": "cuecard-memorizer",
   "version": "1.0.0",
-  "description": "Cue Card Memorization Web App with Express & Supabase",
+  "description": "Speech Cue Card Memorizer with Express, Supabase & Tailwind CSS",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
