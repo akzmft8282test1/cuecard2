@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>새 큐카드 등록</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
+  <nav class="bg-indigo-600 text-white shadow-md mb-8">
+    <div class="max-w-2xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold flex items-center gap-2">➕ 새 큐카드 등록</h1>
+      <a href="/" class="bg-indigo-700 hover:bg-indigo-800 px-3 py-1.5 rounded-lg text-sm font-medium transition">← 연습기로 돌아가기</a>
+    </div>
+  </nav>
+
+  <main class="max-w-2xl mx-auto px-4">
+    <form id="addForm" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-1">큐카드 구분명 (title)</label>
+        <input type="text" id="title" required placeholder="예: 세탁기 (Washing Machine)" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">[1] 발명품 이름 (v1)</label>
+          <input type="text" id="v1" required placeholder="예: the washing machine" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">[2] 발명가 이름 (v2)</label>
+          <input type="text" id="v2" required placeholder="예: Alva Fisher" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-1">[4] 발명 연도 (v4)</label>
+        <input type="text" id="v4" required placeholder="예: 1908 또는 2007" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-1">[5] 과거의 문제행동 (v5)</label>
+        <input type="text" id="v5" required placeholder="예: wash all clothes by hand" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-1">[6] 과거에 해야만 했던 힘든 일 (v6)</label>
+        <input type="text" id="v6" required placeholder="예: do hard laundry work" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold text-slate-700 mb-1">[7] 현재의 사용 목적 (v7)</label>
+        <input type="text" id="v7" required placeholder="예: wash a lot of clothes quickly" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md">
+        큐카드 DB에 저장하기
+      </button>
+    </form>
+  </main>
+
+  <script>
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        title: document.getElementById('title').value,
+        v1: document.getElementById('v1').value,
+        v2: document.getElementById('v2').value,
+        v4: document.getElementById('v4').value,
+        v5: document.getElementById('v5').value,
+        v6: document.getElementById('v6').value,
+        v7: document.getElementById('v7').value
+      };
+
+      try {
+        const res = await fetch('/api/cuecards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          alert('큐카드가 성공적으로 등록되었습니다!');
+          window.location.href = '/';
+        } else {
+          const data = await res.json();
+          alert('등록 실패: ' + (data.error || '오류가 발생했습니다.'));
+        }
+      } catch (err) {
+        alert('서버 통신 오류가 발생했습니다.');
+      }
+    });
+  </script>
+</body>
+</html>
